@@ -1749,7 +1749,7 @@ def _swap(ctx, app, tr, why, payer, payee, frm, to, to_asset, amount, from_asset
     tr['leg2_node'] = leg2.name
     if remote is not None:
         tr['bridge'] = {'from': prov.name, 'to': remote.name}
-        why.append('{} can\'t pay {} itself ({} is on {}): its assetswap-remote for {} is {}, the same LSP\'s '
+        why.append('{} can\'t pay {} itself ({} is on {}): its assetswap-remote for {} is {}, the provider '
                    'node there, which pays leg 2 over {}\'s RPC socket.'.format(
                        prov.name, to_l, to, CHAIN_NAMES.get(payee.kind, payee.kind), to_asset if len(to_asset) < 20 else to_l, remote.name,
                        remote.name))
