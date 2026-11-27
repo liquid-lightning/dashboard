@@ -20,7 +20,7 @@ python3 $W/contrib/nodeui/ui.py --network liquid-regtest --elements-rpc http://p
 ```
 
 Open http://127.0.0.1:8765. To see the page with sample data and no nodes, open
-`/?demo`.
+`/demo` (or `/?demo`).
 
 ### The whole test environment: `testnet.sh`
 
@@ -268,3 +268,18 @@ They use fake RPC objects and start no daemons. They cover:
 - confirmation progress and the emergency-reserve note.
 
 `ui/demo.json` is generated from the same fakes.
+
+## Status
+
+MVP, not production ready. The page is a tool for test networks. Read the
+Security section above before exposing it beyond localhost.
+
+The page loads its fonts from Google Fonts, so a browser that opens it makes a
+request to `fonts.googleapis.com`. Everything else is served by `ui.py`.
+
+Some paths in this README still refer to the layout the code had inside the
+CLN tree (`contrib/nodeui`, `contrib/assetchan`, `contrib/evmchan`).
+
+## Licence
+
+MIT, see [LICENSE](LICENSE).

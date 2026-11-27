@@ -65,6 +65,22 @@ for nd in st['nodes']:
     if nd.get('evm') and 'credits_hours' in nd['evm'] and nd['evm']['anvil']:
         nd['evm'].update(credits_hours=0.5)
 st['now'] = T
+
+
+# Swaps (assetswap-plugin), as ui.swap_info reports them: alice and frank pay
+# through their chain's provider (bob, erin), and the providers have each
+# other pay leg 2.
+def pair(a, b):
+    return [{'from': a, 'to': b, 'rate_ppm': 1000000, 'fee_base_msat': 0}]
+
+
+SWAPS = {'alice': {'receive': True, 'pay': True, 'native': 'btc', 'provider': 'bob', 'pairs': pair('btc', 'eth')},
+         'bob': {'receive': True, 'pay': True, 'native': 'btc', 'pairs': pair('btc', 'eth'), 'remotes': {'eth': 'erin'}},
+         'erin': {'receive': True, 'pay': True, 'native': 'eth', 'pairs': pair('eth', 'btc'), 'remotes': {'btc': 'bob'}},
+         'frank': {'receive': True, 'pay': True, 'native': 'eth', 'provider': 'erin', 'pairs': pair('eth', 'btc')}}
+for nd in st['nodes']:
+    if nd['name'] in SWAPS:
+        nd['swap'] = SWAPS[nd['name']]
 LOG = ['funding tx a43d57113597e25b773c94de882c6d857bb8edb589689abd598b491f57db544d:0, 2000 sat L-BTC fee reserve next to the asset',
        'liquid:regtest/TEST channel carol -> dave ready: 1,000,000 units (2690367x1x0)']
 

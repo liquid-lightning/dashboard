@@ -225,6 +225,9 @@ def test_http_refuses_cross_network_open_with_400_and_needs_the_token():
         page = c.getresponse().read().decode()
         assert token in page and '__NODEUI_TOKEN__' not in page
         c = http.client.HTTPConnection('127.0.0.1', port, timeout=10)
+        c.request('GET', '/demo')     # the same page: it shows its sample data there
+        assert c.getresponse().read().decode() == page
+        c = http.client.HTTPConnection('127.0.0.1', port, timeout=10)
         c.request('GET', '/api/state', headers={'X-NodeUI-Token': token})
         r = c.getresponse()
         assert r.status == 200 and json.loads(r.read())['networks']
@@ -409,6 +412,39 @@ def test_invoice_hints_private_channels_and_shows_warnings():
     assert st == 'done' and 'exposeprivatechannels' not in e2.called('invoice')[-1]
     assert any('CLN warning_deadends: Insufficient incoming capacity' in x for x in log)
     assert res['bolt11'].startswith('lnbcrt')
+    assert res['warnings'] == ['CLN warning_deadends: ' + warning]       # and next to the invoice on the page
+
+
+def test_invoice_above_inbound_capacity_warns_on_liquid_too():
+    """An asset invoice for more than the node's channels in that asset can
+    receive says so, and passes on the warning_* fields assetchan-invoice
+    returns from CLN's invoice; one within capacity has no warnings."""
+    app, f = full_app()
+    l2 = f['l2']
+    st, log, res = run(app, {'action': 'invoice', 'node': 'l2', 'amount': 1000, 'asset': ASSET})
+    assert st == 'done' and 'warnings' not in res and not any('can receive at most' in x for x in log)
+
+    l2.r['invoice'] = lambda p: {'bolt11': l2.bolt11(p), 'payment_hash': '11' * 32,
+                                 'warning_capacity': 'Insufficient incoming channel capacity to pay invoice'}
+    st, log, res = run(app, {'action': 'invoice', 'node': 'l2', 'amount': 700_000, 'asset': ASSET})
+    assert st == 'done' and res['bolt11']
+    assert any('l2 can receive at most 600,000 units in one channel' in x for x in log)
+    assert any('CLN warning_capacity: Insufficient incoming channel capacity' in x for x in log)
+    assert len(res['warnings']) == 2
+
+    # The asset channel doesn't count for an L-BTC invoice.
+    st, log, res = run(app, {'action': 'invoice', 'node': 'l2', 'amount': 1000})
+    assert any('l2 can receive at most 0 sat in one channel' in x for x in log)
+
+
+def test_history_keeps_the_last_50_jobs():
+    app, _ = full_app()
+    assert ui.Jobs.KEEP == 50
+    for i in range(ui.Jobs.KEEP + 3):
+        app.jobs.start('job {}'.format(i), 'btc:regtest', lambda ctx: None, wait=True)
+    _, history = app.jobs.current()
+    assert len(history) == 50
+    assert history[0]['title'] == 'job 52' and history[-1]['title'] == 'job 3'      # newest first
 
 
 def test_run_pay_invoice_send_newaddr_mine():
@@ -765,6 +801,7 @@ def test_demo_json_has_every_kind():
     assert any(n.get('evm') and n['evm']['token'] for n in d['nodes'])
     assert any(n.get('evm') and not n['evm']['token'] for n in d['nodes'])
     assert any(c['asset'] for c in d['channels'])
+    assert any(n.get('swap', {}).get('pay') and n['swap'].get('provider') for n in d['nodes'])     # the Swap tab shows
     for key in ('networks', 'nodes', 'channels', 'maps', 'assets', 'jobs', 'history'):
         assert key in d
 

@@ -89,7 +89,21 @@
      "name": "bob",
      "connected": true
     }
-   ]
+   ],
+   "swap": {
+    "receive": true,
+    "pay": true,
+    "native": "btc",
+    "provider": "bob",
+    "pairs": [
+     {
+      "from": "btc",
+      "to": "eth",
+      "rate_ppm": 1000000,
+      "fee_base_msat": 0
+     }
+    ]
+   }
   },
   {
    "name": "bob",
@@ -118,7 +132,23 @@
      "name": "alice",
      "connected": true
     }
-   ]
+   ],
+   "swap": {
+    "receive": true,
+    "pay": true,
+    "native": "btc",
+    "pairs": [
+     {
+      "from": "btc",
+      "to": "eth",
+      "rate_ppm": 1000000,
+      "fee_base_msat": 0
+     }
+    ],
+    "remotes": {
+     "eth": "erin"
+    }
+   }
   },
   {
    "name": "carol",
@@ -301,7 +331,23 @@
     "refresh_wait_s": 0,
     "poll_every_s": 3
    },
-   "deposits": []
+   "deposits": [],
+   "swap": {
+    "receive": true,
+    "pay": true,
+    "native": "eth",
+    "pairs": [
+     {
+      "from": "eth",
+      "to": "btc",
+      "rate_ppm": 1000000,
+      "fee_base_msat": 0
+     }
+    ],
+    "remotes": {
+     "btc": "bob"
+    }
+   }
   },
   {
    "name": "frank",
@@ -393,7 +439,21 @@
     "refresh_wait_s": 0,
     "poll_every_s": 3
    },
-   "deposits": []
+   "deposits": [],
+   "swap": {
+    "receive": true,
+    "pay": true,
+    "native": "eth",
+    "provider": "erin",
+    "pairs": [
+     {
+      "from": "eth",
+      "to": "btc",
+      "rate_ppm": 1000000,
+      "fee_base_msat": 0
+     }
+    ]
+   }
   },
   {
    "name": "gina",
