@@ -8,7 +8,7 @@ assetchan plugin) and EVM (the evmbackend plugin) networks.
                                        # nodes.sh's A..D, as contrib/assetchan/ui.py did
     contrib/nodeui/ui.py ... --port 8765 --bitcoin-rpc http://u:p@127.0.0.1:18443
 
-Then open http://127.0.0.1:8765 (`?demo` shows sample data).  For each node
+Then open http://127.0.0.1:8765 (`/demo` shows sample data).  For each node
 the server works out once, and again whenever it comes back after being
 down, what it is: `evm` if it has `evm-status`, `liquid` if it has
 `assetchan-*` methods or runs on liquid*, else `bitcoin`.  Every node and
@@ -1197,7 +1197,7 @@ class Jobs:
     node) that has an earlier job waits for it, in order. A node has one
     network ID, so jobs on two networks never touch the same node; the node
     check covers a node that came back on another network meanwhile."""
-    KEEP = 8            # finished jobs kept, with their logs
+    KEEP = 50           # finished jobs kept, with their logs
     MAX_WAITING = 3     # waiting jobs per network
 
     def __init__(self, app):
@@ -1497,19 +1497,35 @@ def receivable_msat(c):
     return msat(c.get('total_msat')) - msat(c.get('to_us_msat'))
 
 
-def receivable_sat(node):
-    """The most the node can receive in one channel, in sat."""
+def receivable_sat(node, asset=None):
+    """The most the node can receive in one channel, in sat (on a Liquid
+    node: in units of asset, over its channels in that asset)."""
     return max([receivable_msat(c) // 1000 for c in node.call('listpeerchannels').get('channels', [])
-                if c.get('state') == 'CHANNELD_NORMAL' and c.get('peer_connected')] or [0])
+                if c.get('state') == 'CHANNELD_NORMAL' and c.get('peer_connected')
+                and (node.kind != 'liquid' or (c.get('asset') or 'lbtc') == (asset or 'lbtc'))] or [0])
 
 
-def make_invoice(ctx, node, amount, asset, description):
+def make_invoice(ctx, node, amount, asset, description, notes=None):
     """An invoice on node; says which private channels it hints, and CLN's
-    warnings (warning_capacity, warning_deadends, ...)."""
+    warnings (warning_capacity, warning_deadends, ...). notes: a list that
+    gets what the payee should know (too little to receive, the warnings)."""
     label = 'nodeui-{}'.format(time.time_ns())
+    notes = [] if notes is None else notes
+
+    def note(line):
+        ctx.say(line)
+        notes.append(line)
+
+    def say_most():
+        most = receivable_sat(node, asset)
+        if most < amount:
+            note('{} can receive at most {} {} in one channel: a channel\'s funds start on the side that '
+                 'opened it, so pay into {} first, or have a peer open a channel to it'.format(
+                     node.name, n(most), unit_name(asset), node.name))
     if node.kind == 'liquid':
         inv = node.call('assetchan-invoice', amount=amount, asset=asset or 'lbtc', label=label,
                         description=description)
+        say_most()
     else:
         hints = private_hints(node, amount)
         inv = node.call('invoice', amount_msat=amount * 1000, label=label, description=description,
@@ -1517,15 +1533,11 @@ def make_invoice(ctx, node, amount, asset, description):
         if hints:
             ctx.say('{} can receive this only on private channels: the invoice hints {}'.format(
                 node.name, ', '.join(hints)))
-        elif node.kind != 'liquid':
-            most = receivable_sat(node)
-            if most < amount:
-                ctx.say('{} can receive at most {} sat in one channel: a channel\'s funds start on the side that '
-                        'opened it, so pay into {} first, or have a peer open a channel to it'.format(
-                            node.name, n(most), node.name))
+        else:
+            say_most()
     for k in sorted(inv):
         if k.startswith('warning_'):
-            ctx.say('CLN {}: {}'.format(k, inv[k]))
+            note('CLN {}: {}'.format(k, inv[k]))
     return inv
 
 
@@ -1550,11 +1562,14 @@ def cmd_pay_invoice(ctx, frm, bolt11, asset):
 
 def cmd_invoice(ctx, node, amount, asset, description):
     nd = ctx.app.nodes[node]
-    inv = make_invoice(ctx, nd, amount, asset, description)
+    notes = []
+    inv = make_invoice(ctx, nd, amount, asset, description, notes)
     net = ctx.app.channel_net(nd, asset)
     ctx.say('invoice on {} for {} {} ({}):'.format(node, n(amount), unit_name(asset), net))
     ctx.say(inv['bolt11'])
     ctx.result['bolt11'] = inv['bolt11']
+    if notes:
+        ctx.result['warnings'] = notes      # the page shows them next to Copy invoice
 
 
 # ---------------------------------------------------------------- swaps
@@ -1758,14 +1773,20 @@ def _swap(ctx, app, tr, why, payer, payee, frm, to, to_asset, amount, from_asset
 
     from_msat = None
     try:
-        q = payer.call('pricetiers', to_asset=to_asset, to_amount_msat=amount * 1000)
+        # As payassetinvoice prices it (and the provider checks it): on the
+        # amount plus leg 2's routing-fee budget.  An older assetswap has no
+        # quote for that: then the bare amount, a little under what is paid.
+        if 'quoteassetinvoice' in payer.methods:
+            q = payer.call('quoteassetinvoice', assetinvoice=w)
+        else:
+            q = payer.call('pricetiers', to_asset=to_asset, to_amount_msat=amount * 1000)
         tiers = ', '.join('{} {}'.format(t['name'], n(t['from_amount_msat'] // 1000)) for t in q['tiers'])
         tr['tiers'] = [{'name': t['name'], 'amount': t['from_amount_msat'] // 1000} for t in q['tiers']]
         from_msat = next((t['from_amount_msat'] for t in q['tiers'] if t['name'] == tier), None)
         ctx.say('2. price in {} from {}\'s own pricetiers (the provider decides when leg 1 lands): {}'.format(
             swap_label(app, q['from_asset']), frm, tiers))
         why.append('Price: {} {} for {} {} at the {} tier ({}); {} accepts leg 1 if it pays at least its own '
-                   'low tier.'.format(n((from_msat or 0) // 1000), tr['from_unit'], n(amount), tr['to_unit'], tier,
+                   'low tier of that amount plus its routing-fee budget for leg 2.'.format(n((from_msat or 0) // 1000), tr['from_unit'], n(amount), tr['to_unit'], tier,
                                       tiers, prov.name))
     except Fail as e:
         ctx.say('2. no local price ({}): payassetinvoice will need one'.format(app.scrub.text(e)))
@@ -2072,10 +2093,15 @@ def cmd_exit(ctx, node, amount):
                        lambda: withdrawable_of(evm_status_of(nd)) > before, mine_between=True)
     if got:
         after = withdrawable_of(evm_status_of(nd))
-        if st.get('token'):
-            ctx.say('withdrawable now {} (+{})'.format(token_text(app, nd, after), token_text(app, nd, after - before)))
-        else:
-            ctx.say('withdrawable now {} (+{})'.format(fmt_eth(after), fmt_eth(after - before)))
+        text = (lambda v: token_text(app, nd, v)) if st.get('token') else fmt_eth
+        # The contract credits a transaction's fee to whoever submitted it:
+        # for an exit that is this node, so it gets the fee back on top.
+        ups = int(st.get('units_per_sat') or SAT_WEI)
+        extra = after - before - amount * ups if amount != 'all' else 0
+        ctx.say('withdrawable now {} (+{}{})'.format(
+            text(after), text(after - before),
+            ': the exit plus {} of transaction fees returned to {} as their submitter'.format(text(extra), node)
+            if extra > 0 else ''))
 
 
 def cmd_withdraw(ctx, node):
@@ -2278,7 +2304,9 @@ def build_job(app, body):
             raise BadRequest('{} has no assetswap-plugin to make the invoice'.format(b.name))
         from_asset, to_asset = swap_asset_arg(body, 'from_asset', a), swap_asset_arg(body, 'to_asset', b)
         amount = amount_arg(body)
-        tier = body.get('tier') or 'medium'
+        # The page has no tier choice: it always pays the high one (the
+        # provider refuses the lower ones for most amounts).
+        tier = body.get('tier') or 'high'
         if tier not in SWAP_TIERS:
             raise BadRequest('tier: one of {}'.format(', '.join(SWAP_TIERS)))
         return ('Swap: {} pays {} to {} in {}'.format(a.name, swap_amount(app, to_asset, amount), b.name,
@@ -2410,7 +2438,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.app.wake.set()
                 return self.reply(503, {'error': 'reading the nodes, try again'})
             return self.reply(200, state)
-        if path == '/':
+        if path in ('/', '/demo'):      # /demo: the page with its sample data (as /?demo)
             with open(os.path.join(UI_DIR, 'index.html'), 'rb') as f:
                 page = f.read().replace(b'__NODEUI_TOKEN__', self.token.encode())
             return self.reply(200, page, 'text/html; charset=utf-8')

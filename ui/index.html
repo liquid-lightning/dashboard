@@ -266,9 +266,9 @@ input[type=checkbox], input[type=radio] { accent-color: var(--accent); width: 16
 .job .result { padding: 8px 16px 0; display: flex; gap: 8px; flex-wrap: wrap; }
 pre.log { margin: 12px 0 0; padding: 12px 16px; background: var(--bg); border-top: 1px solid var(--line); font: 12px/1.6 var(--mono); color: var(--muted);
   white-space: pre-wrap; overflow-wrap: anywhere; max-height: 260px; overflow-y: auto; }
-.history { list-style: none; margin: 0; padding: 8px 16px 12px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+.history { list-style: none; margin: 0; padding: 8px 16px 12px; max-height: 420px; overflow-y: auto; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
 .history:empty { display: none; }
-.history li { display: flex; gap: 8px; align-items: baseline; }
+.history li { flex: none; display: flex; gap: 8px; align-items: baseline; }
 .history li span:last-child { overflow-wrap: anywhere; }
 .history details { width: 100%; }
 .history summary { display: flex; gap: 8px; align-items: baseline; cursor: pointer; list-style: none; }
@@ -360,7 +360,7 @@ pre.log { margin: 12px 0 0; padding: 12px 16px; background: var(--bg); border-to
             <label>To<select name="to" id="open-to"></select></label>
           </div>
           <label id="open-asset-l">Asset<select name="asset" id="open-asset"></select></label>
-          <label><span id="open-unit">Amount (sat)</span><input name="amount" type="number" min="1" step="1" value="100000" required></label>
+          <label><span id="open-unit">Amount (sat)</span><input name="amount" type="number" min="1" max="1000000000000000" step="1" value="100000" required></label>
           <label class="check"><input name="announce" type="checkbox" checked> Announce to the network</label>
           <p class="hint">Announced: after 6 confirmations every node learns it through gossip and can route through it.
             Private: only these two nodes know it, so other payers can use it only as the last hop of an invoice;
@@ -380,7 +380,7 @@ pre.log { margin: 12px 0 0; padding: 12px 16px; background: var(--bg); border-to
           <label id="pay-to-l">To<select name="to" id="pay-to"></select></label>
           <label id="pay-bolt11-l" hidden>Invoice (bolt11)<textarea name="bolt11" id="pay-bolt11" spellcheck="false" autocomplete="off" placeholder="lnbcrt…"></textarea></label>
           <label id="pay-asset-l">Asset<select name="asset" id="pay-asset"></select></label>
-          <label id="pay-amount-l"><span id="pay-unit">Amount (sat)</span><input name="amount" type="number" min="1" step="1" value="1000"></label>
+          <label id="pay-amount-l"><span id="pay-unit">Amount (sat)</span><input name="amount" type="number" min="1" max="1000000000000000" step="1" value="1000"></label>
           <p class="hint" id="pay-hint">Finds a path over open channels on the same network. Several hops are fine.</p>
           <button class="btn" type="submit">Send payment</button>
         </form>
@@ -390,7 +390,7 @@ pre.log { margin: 12px 0 0; padding: 12px 16px; background: var(--bg); border-to
         <form data-action="invoice">
           <label>Node<select name="node" id="inv-node"></select></label>
           <label id="inv-asset-l">Asset<select name="asset" id="inv-asset"></select></label>
-          <label><span id="inv-unit">Amount (sat)</span><input name="amount" type="number" min="1" step="1" value="1000" required></label>
+          <label><span id="inv-unit">Amount (sat)</span><input name="amount" type="number" min="1" max="1000000000000000" step="1" value="1000" required></label>
           <label>Description<input name="description" type="text" maxlength="100" value="nodeui invoice"></label>
           <p class="hint">The invoice shows in Activity, with a button to copy it.</p>
           <button class="btn" type="submit">Create invoice</button>
@@ -408,8 +408,7 @@ pre.log { margin: 12px 0 0; padding: 12px 16px; background: var(--bg); border-to
             <label>Gets<select name="to_asset" id="swap-toasset"></select></label>
           </div>
           <div class="row">
-            <label><span id="swap-unit">Amount (sat)</span><input name="amount" id="swap-amount" type="number" min="1" step="1" value="1000" required></label>
-            <label>Tier<select name="tier" id="swap-tier"><option value="low">low</option><option value="medium" selected>medium</option><option value="high">high</option></select></label>
+            <label><span id="swap-unit">Amount (sat)</span><input name="amount" id="swap-amount" type="number" min="1" max="1000000000000000" step="1" value="1000" required></label>
           </div>
           <p class="hint" id="swap-route"></p>
           <p class="hint">The payee makes an invoice (assetinvoice); the payer pays it in its own asset (payassetinvoice)
@@ -439,7 +438,7 @@ pre.log { margin: 12px 0 0; padding: 12px 16px; background: var(--bg); border-to
           <label>Address<input name="address" type="text" autocomplete="off" spellcheck="false" placeholder="bcrt1…" id="send-address" required></label>
           <div class="row">
             <label id="send-asset-l">Asset<select name="asset" id="send-asset"></select></label>
-            <label><span id="send-unit">Amount (sat)</span><input name="amount" type="number" min="1" step="1" value="10000" id="send-amount"></label>
+            <label><span id="send-unit">Amount (sat)</span><input name="amount" type="number" min="1" max="1000000000000000" step="1" value="10000" id="send-amount"></label>
           </div>
           <label class="check" id="send-all-l"><input name="all" type="checkbox" id="send-all"> Everything in the wallet</label>
           <p class="hint" id="send-hint"></p>
@@ -457,7 +456,7 @@ pre.log { margin: 12px 0 0; padding: 12px 16px; background: var(--bg); border-to
           <h3>Fund a node</h3>
           <div class="row">
             <label>Node<select name="node" id="fund-node"></select></label>
-            <label>Amount (sat)<input name="amount" type="number" min="1" step="1" value="1000000" required></label>
+            <label>Amount (sat)<input name="amount" type="number" min="1" max="1000000000000000" step="1" value="1000000" required></label>
           </div>
           <p class="hint" id="fund-hint">Liquid: L-BTC from the elementsd wallet. Bitcoin regtest: from bitcoind's wallet.</p>
           <button class="btn" type="submit">Fund node</button>
@@ -469,7 +468,7 @@ pre.log { margin: 12px 0 0; padding: 12px 16px; background: var(--bg); border-to
           <h3>Deposit</h3>
           <div class="row">
             <label>Node<select name="node" id="dep-node"></select></label>
-            <label>Amount (sat)<input name="amount" type="number" min="1" step="1" value="1000000" required></label>
+            <label>Amount (sat)<input name="amount" type="number" min="1" max="1000000000000000" step="1" value="1000000" required></label>
           </div>
           <p class="hint" id="dep-hint">From the node's ETH key to a fresh address of its wallet.</p>
           <button class="btn" type="submit">Deposit</button>
@@ -478,7 +477,7 @@ pre.log { margin: 12px 0 0; padding: 12px 16px; background: var(--bg); border-to
           <h3>Exit</h3>
           <div class="row">
             <label>Node<select name="node" id="exit-node"></select></label>
-            <label>Amount (sat)<input name="amount" type="number" min="1" step="1" value="100000" id="exit-amount"></label>
+            <label>Amount (sat)<input name="amount" type="number" min="1" max="1000000000000000" step="1" value="100000" id="exit-amount"></label>
           </div>
           <label class="check"><input name="all" type="checkbox" id="exit-all"> Everything in the wallet</label>
           <p class="hint">A <span class="mono">withdraw</span> to <span class="mono">evm-exitaddr</span> of the node's own ETH address: the contract credits it as withdrawable.</p>
@@ -541,7 +540,7 @@ pre.log { margin: 12px 0 0; padding: 12px 16px; background: var(--bg); border-to
 <script>
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
-const demo = new URLSearchParams(location.search).has('demo');
+const demo = location.pathname === '/demo' || new URLSearchParams(location.search).has('demo');
 const TOKEN = document.querySelector('meta[name=nodeui-token]').content;
 const ASSET_COLORS = ['--a1', '--a2', '--a3', '--a4'];
 const KIND = {bitcoin: 'Bitcoin', liquid: 'Liquid', evm: 'EVM'};
@@ -607,10 +606,23 @@ async function refresh() {
     }
     if (!r.ok) throw new Error(r.status);
     S = await r.json();
+    if (demo) demoShift(S);
     render();
   } catch (e) {
     $('#chain').innerHTML = '<span class="dot bad"></span><span>Server not reachable</span>';
   }
+}
+
+/* demo.json's times are from when it was made: moved so that its "now" is
+   the time this page loaded (a running job then keeps running). */
+let demoOff = null;
+function demoShift(st) {
+  if (!st.now) return;
+  if (demoOff === null) demoOff = Math.floor(Date.now() / 1000) - st.now;
+  const mv = (o, k) => { if (o && typeof o[k] === 'number') o[k] += demoOff; };
+  (st.jobs || []).concat(st.history || []).forEach(j => ['queued', 'started', 'ended'].forEach(k => mv(j, k)));
+  (st.nodes || []).forEach(nd => Object.values((nd.evm && nd.evm.alarms) || {}).forEach(a => mv(a, 'since')));
+  st.now += demoOff;
 }
 
 async function post(path, body) {
@@ -995,6 +1007,7 @@ function renderNodes() {
     if (!nd.ok) return `<div class="node">${top}<div class="down">Down: ${esc(nd.error || 'not reachable')}</div></div>`;
     /* Up front: the wallet, deposits on their way, and anything that needs attention. */
     let rows = `<div class="bal"><span class="hgroup">Wallet (${esc(nd.wallet.unit)})${nd.wallet.reserve_hint ? qi(nd.wallet.reserve_hint + '.', 'About the wallet reserve') : ''}</span><b>${n(nd.wallet.confirmed)}${nd.wallet.unconfirmed ? ` <span class="sub">+${n(nd.wallet.unconfirmed)} unconfirmed</span>` : ''}</b></div>`;
+    if (nd.wallet.reserve) rows += `<div class="progress">Wallet at or below CLN's ${n(nd.wallet.reserve)} sat emergency reserve: it can't be spent while the node has channels.</div>`;
     (nd.deposits || []).forEach(d => {
       rows += `<div class="progress" title="${esc(d.txid)}">Deposit of ${n(d.sat)} sat: ${d.in_wallet ? 'in the wallet, unconfirmed'
         : `mined on the EVM chain; CLN at block ${n(nd.blockheight)} of ${n(d.height)}${d.height > nd.blockheight ? ` (${n(d.height - nd.blockheight)} to go)` : ''}`}</div>`;
@@ -1065,7 +1078,8 @@ function renderChannels() {
   }
   put('#channels', rows.map(c => {
     const total = c.a_units + c.b_units, pct = total ? c.a_units / total * 100 : 0;
-    const closable = !['closed', 'onchain'].includes(c.state) && (nodeBy(c.a) || {}).ok;
+    /* A channel already closing gets no button; the Close tab still lists it, for a force close of one stuck in negotiation. */
+    const closable = ['open', 'opening'].includes(c.state) && (nodeBy(c.a) || {}).ok;
     return `<tr class="${c.state === 'closed' ? 'dim' : ''}">
       <td><span class="pair">${esc(c.a)}<span aria-hidden="true">⇄</span><span class="sr"> and </span>${esc(c.b)}</span>${c.scid ? `<div class="mono" style="color:var(--dim)">${esc(c.scid)}</div>` : ''}${c.funding ? `<div class="addr" title="${esc(c.funding.title)}"><span>funding</span>${ext(c.funding.txid, c.funding.path, c.node_net)}${c.kind === 'evm' && !c.funding.path ? ' <span class="sub">EVM tx not known yet</span>' : ''}</div>` : ''}</td>
       <td>${badge(c.net, c.kind)}</td>
@@ -1106,7 +1120,11 @@ function assetOpts(...nodes) {
 function setAsset(prefix, nodes) {
   const opts = assetOpts(...nodes);
   $(`#${prefix}-asset-l`).hidden = !opts.length;
-  if (opts.length) fill(`#${prefix}-asset`, opts);
+  const sel = $(`#${prefix}-asset`);
+  if (opts.length) fill(sel, opts);
+  // No asset to pick (not a Liquid node): empty the hidden select, or the
+  // form would send the asset picked for the last Liquid node.
+  else { sel.innerHTML = ''; sel.dataset.html = ''; }
   const unitEl = $(`#${prefix}-unit`);
   if (unitEl) unitEl.textContent = opts.length && $(`#${prefix}-asset`).value !== 'lbtc' ? 'Amount (units)' : 'Amount (sat)';
 }
@@ -1177,7 +1195,7 @@ function renderForms() {
   else if (sf && st) {
     const prov = nodeBy(sf.swap.provider), remote = prov && prov.swap && prov.swap.remotes && prov.swap.remotes[toA];
     const pair = (sf.swap.pairs || []).find(p => p.to === toA);
-    const amt = Number($('#swap-amount').value) || 0, tier = $('#swap-tier').value;
+    const amt = Number($('#swap-amount').value) || 0, tier = 'high';   // the one tier the page uses
     const lab = a => ({lbtc: 'L-BTC', eth: 'ETH', btc: 'BTC'})[a] || assetLabel(a);
     sr = `Leg 1: ${sf.name} → ${sf.swap.provider} in ${lab(fromA)}; leg 2: ${remote || sf.swap.provider} → ${st.name} in ${lab(toA)}.`;
     if (pair && pair.from === fromA && amt) {
@@ -1246,7 +1264,8 @@ const openLogs = new Map();       /* finished job id -> the user opened (true) o
 function jobResult(j) {
   return Object.entries(j.result || {}).filter(([k]) => k === 'bolt11' || k === 'address')
     .map(([k, v]) => `<button class="btn ghost" type="button" data-copy="${esc(v)}" data-what="${k === 'bolt11' ? 'Invoice' : 'Address'}">Copy ${k === 'bolt11' ? 'invoice' : 'address'}</button>`).join('')
-    + (j.result && j.result.swap ? `<button class="btn ghost" type="button" data-route="${j.id}">Show route</button>` : '');
+    + (j.result && j.result.swap ? `<button class="btn ghost" type="button" data-route="${j.id}">Show route</button>` : '')
+    + ((j.result && j.result.warnings) || []).map(w => `<span class="progress" style="flex-basis:100%">${esc(w)}</span>`).join('');
 }
 /* A job log, its tx hashes linked to the network's explorer: 0x hashes on an
    EVM chain (EVM txs), and hashes after "tx"/"txid" elsewhere. */
@@ -1354,25 +1373,27 @@ $$('form[data-action]').forEach(f => f.addEventListener('submit', e => {
   else if (action === 'pay') {
     Object.assign(body, {frm: v.frm, asset: v.asset || 'lbtc'});
     if (v.mode === 'invoice') { if (!v.bolt11) { toast('Paste an invoice.', true); return; } body.bolt11 = v.bolt11; }
-    else Object.assign(body, {to: v.to, amount: v.amount});
+    else { if (!v.amount) { toast('Enter an amount.', true); return; } Object.assign(body, {to: v.to, amount: v.amount}); }
   } else if (action === 'close') {
     const c = S.channels.find(x => x.id === v.chan);
     if (!c) { toast('Pick a channel to close.', true); return; }
     const force = !!v.force;
-    if (force && !confirm(`Force close ${c.a} ⇄ ${c.b}? The funds stay locked until the timelocks pass.`)) return;
+    if (force && !demo && !confirm(`Force close ${c.a} ⇄ ${c.b}? The funds stay locked until the timelocks pass.`)) return;
     Object.assign(body, {node: c.a, chan: c.id, force});
   } else if (action === 'send') {
     Object.assign(body, {node: v.node, address: v.address, asset: v.asset, amount: v.all ? 'all' : v.amount});
     const nd = nodeBy(v.node);
-    if (!confirm(`Send ${v.all ? 'everything' : n(v.amount) + ' ' + $('#send-unit').textContent.replace(/Amount \((.*)\)/, '$1')} from ${v.node} to ${v.address}?`)) return;
+    if (!v.all && !v.amount) { toast('Enter an amount, or tick "Everything in the wallet".', true); return; }
+    if (!demo && !confirm(`Send ${v.all ? 'everything' : n(v.amount) + ' ' + $('#send-unit').textContent.replace(/Amount \((.*)\)/, '$1')} from ${v.node} to ${v.address}?`)) return;
     if (nd && nd.kind !== 'liquid') delete body.asset;
   } else if (action === 'exit') {
-    if (!confirm(`Exit ${v.all ? "everything in " + v.node + "'s wallet" : n(v.amount) + ' sat from ' + v.node} to its ETH address? It can't be undone.`)) return;
+    if (!v.all && !v.amount) { toast('Enter an amount, or tick "Everything in the wallet".', true); return; }
+    if (!demo && !confirm(`Exit ${v.all ? "everything in " + v.node + "'s wallet" : n(v.amount) + ' sat from ' + v.node} to its ETH address? It can't be undone.`)) return;
     Object.assign(body, {node: v.node, amount: v.all ? 'all' : v.amount});
   }
   else if (action === 'withdraw') body.node = v.node;
   else if (action === 'cashout') {
-    if (!confirm(`Cash out ${v.node}: exit everything in its wallet and withdraw it to its ETH address? It can't be undone.`)) return;
+    if (!demo && !confirm(`Cash out ${v.node}: exit everything in its wallet and withdraw it to its ETH address? It can't be undone.`)) return;
     body.node = v.node;
   }
   else Object.assign(body, v);

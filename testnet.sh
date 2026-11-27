@@ -31,7 +31,7 @@
 #   LIQUID_NODES (A B C D E F, shown as LA..LF), ASSETCHAN_PORT_BASE (20760), ASSETCHAN_DIR,
 #   ELEMENTS_RPC, ELEMENTS_WALLET, ELEMENTS_PROXY (assetchan-elements-proxy)
 #   BTC_NODES (X Y), BTC_DIR (~/.btc-regtest), BTC_PORT_BASE (20790), BTC_RPC_PORT (18443)
-#   LIGHTNING_SRC (../lightning), EVMCHAN_DIR (../evm/plugin/evmchan), ASSETCHAN_DIR (../liquid/plugin/assetchan)
+#   LIGHTNING_SRC (../lightning), EVMCHAN_DIR (../plugins/evm/plugin/evmchan), ASSETCHAN_DIR (../plugins/liquid/plugin/assetchan)
 #   UI_PORT (8780), NODES_JSON ($EVM_DIR/nodes.json, written by start)
 set -euo pipefail
 # Nothing here needs a private key: no child (lightningd, plugins, the page) gets one.
@@ -40,8 +40,8 @@ unset DEPLOYER_PRIVATE_KEY
 here=$(cd "$(dirname "$0")" && pwd)
 # Sibling checkouts: CLN, the EVM plugin and the Liquid plugin.
 root=$(cd "${LIGHTNING_SRC:-$here/../lightning}" && pwd)
-evmchan=$(cd "${EVMCHAN_DIR:-$here/../evm/plugin/evmchan}" && pwd)
-assetchan=$(cd "${ASSETCHAN_DIR:-$here/../liquid/plugin/assetchan}" && pwd)
+evmchan=$(cd "${EVMCHAN_DIR:-$here/../plugins/evm/plugin/evmchan}" && pwd)
+assetchan=$(cd "${ASSETCHAN_DIR:-$here/../plugins/liquid/plugin/assetchan}" && pwd)
 venv=${VENV:-$root/.venv}
 export PATH="$venv/bin:$PATH"
 export PYTHONPATH="$root/contrib/pyln-client:$root/contrib/pyln-proto${PYTHONPATH:+:$PYTHONPATH}"
